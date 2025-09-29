@@ -1,6 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState } from "react";
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from "@/components/ui/select";
 import { 
   Users, 
   Building2, 
@@ -12,6 +21,118 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 const Dashboard = () => {
+  // Region filters (dynamic, fetched from API)
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [loadingStates, setLoadingStates] = useState<boolean>(false);
+  const [loadingCities, setLoadingCities] = useState<boolean>(false);
+  const [statesError, setStatesError] = useState<string>("");
+  const [citiesError, setCitiesError] = useState<string>("");
+
+  type RegionMetric = { applications: number; matches: number; companies: number; students: number };
+  const metricsByRegion: Record<string, { total: RegionMetric; cities: Record<string, RegionMetric> }> = {
+    Maharashtra: {
+      total: { applications: 5200, matches: 4100, companies: 62, students: 6400 },
+      cities: {
+        Mumbai: { applications: 2500, matches: 2000, companies: 28, students: 3000 },
+        Pune: { applications: 1800, matches: 1500, companies: 22, students: 2300 },
+        Nagpur: { applications: 500, matches: 380, companies: 6, students: 650 },
+        Nashik: { applications: 400, matches: 320, companies: 6, students: 450 },
+      },
+    },
+    Karnataka: {
+      total: { applications: 4300, matches: 3500, companies: 54, students: 5200 },
+      cities: {
+        Bengaluru: { applications: 3400, matches: 2900, companies: 44, students: 4100 },
+        Mysuru: { applications: 500, matches: 380, companies: 6, students: 650 },
+        Mangaluru: { applications: 400, matches: 320, companies: 4, students: 450 },
+      },
+    },
+    Delhi: {
+      total: { applications: 2100, matches: 1750, companies: 31, students: 2500 },
+      cities: { "New Delhi": { applications: 2100, matches: 1750, companies: 31, students: 2500 } },
+    },
+    Telangana: {
+      total: { applications: 2400, matches: 1900, companies: 35, students: 2900 },
+      cities: { Hyderabad: { applications: 2000, matches: 1600, companies: 30, students: 2400 }, Warangal: { applications: 400, matches: 300, companies: 5, students: 500 } },
+    },
+    "Tamil Nadu": {
+      total: { applications: 2600, matches: 2100, companies: 38, students: 3200 },
+      cities: { Chennai: { applications: 1800, matches: 1500, companies: 26, students: 2200 }, Coimbatore: { applications: 500, matches: 400, companies: 8, students: 700 }, Madurai: { applications: 300, matches: 200, companies: 4, students: 300 } },
+    },
+    Gujarat: {
+      total: { applications: 1900, matches: 1500, companies: 29, students: 2200 },
+      cities: { Ahmedabad: { applications: 900, matches: 720, companies: 14, students: 1050 }, Surat: { applications: 600, matches: 480, companies: 9, students: 750 }, Vadodara: { applications: 400, matches: 300, companies: 6, students: 400 } },
+    },
+    "West Bengal": {
+      total: { applications: 1700, matches: 1350, companies: 24, students: 2000 },
+      cities: { Kolkata: { applications: 1400, matches: 1120, companies: 20, students: 1650 }, Howrah: { applications: 300, matches: 230, companies: 4, students: 350 } },
+    },
+  };
+
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
+
+  // Fetch states on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchStates = async () => {
+      try {
+        setLoadingStates(true);
+        setStatesError("");
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: "India" }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const nextStates: string[] = json?.data?.states?.map((s: any) => s.name).filter(Boolean) ?? [];
+        if (isMounted) setStates(nextStates.sort());
+      } catch (e: any) {
+        if (isMounted) setStatesError("Failed to load states. Please try again.");
+      } finally {
+        if (isMounted) setLoadingStates(false);
+      }
+    };
+    fetchStates();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCities = async () => {
+      if (!selectedState) { setCities([]); return; }
+      try {
+        setLoadingCities(true);
+        setCitiesError("");
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: "India", state: selectedState }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const nextCities: string[] = json?.data ?? [];
+        if (isMounted) setCities(Array.isArray(nextCities) ? nextCities.sort() : []);
+      } catch (e: any) {
+        if (isMounted) setCitiesError("Failed to load cities. Please try again.");
+      } finally {
+        if (isMounted) setLoadingCities(false);
+      }
+    };
+    fetchCities();
+    return () => { isMounted = false; };
+  }, [selectedState]);
+  const regionMetrics: RegionMetric | null = useMemo(() => {
+    if (!selectedState) return null;
+    const region = metricsByRegion[selectedState];
+    if (!region) return null;
+    if (selectedCity && region.cities[selectedCity]) return region.cities[selectedCity];
+    return region.total;
+  }, [selectedState, selectedCity]);
+
   // Mock data for the dashboard
   const overviewStats = {
     totalStudents: 12847,
@@ -48,6 +169,51 @@ const Dashboard = () => {
     { sector: 'Consulting', students: 1847, companies: 31 }
   ];
 
+  // Derived, filtered analytics based on selected state/city
+  const filteredApplicationData = useMemo(() => {
+    if (!regionMetrics) return applicationData;
+    const total = applicationData.reduce((s, d) => s + d.value, 0) || 1;
+    return applicationData.map((d) => ({
+      ...d,
+      value: Math.round((d.value / total) * regionMetrics.applications),
+    }));
+  }, [regionMetrics]);
+
+  const filteredCompanyStatusData = useMemo(() => {
+    if (!regionMetrics) return companyStatusData;
+    const total = companyStatusData.reduce((s, d) => s + d.value, 0) || 1;
+    return companyStatusData.map((d, idx) => ({
+      ...d,
+      value: Math.round((d.value / total) * regionMetrics.companies),
+    }));
+  }, [regionMetrics]);
+
+  const filteredMonthlyTrends = useMemo(() => {
+    if (!regionMetrics) return monthlyTrends;
+    const baseApps = monthlyTrends.reduce((s, m) => s + m.applications, 0) || 1;
+    const baseMatches = monthlyTrends.reduce((s, m) => s + m.matches, 0) || 1;
+    const appScale = regionMetrics.applications / baseApps;
+    const matchScale = regionMetrics.matches / baseMatches;
+    return monthlyTrends.map((m) => ({
+      ...m,
+      applications: Math.max(0, Math.round(m.applications * appScale)),
+      matches: Math.max(0, Math.round(m.matches * matchScale)),
+    }));
+  }, [regionMetrics]);
+
+  const filteredSectorDistribution = useMemo(() => {
+    if (!regionMetrics) return sectorDistribution;
+    const baseStudents = sectorDistribution.reduce((s, d) => s + d.students, 0) || 1;
+    const baseCompanies = sectorDistribution.reduce((s, d) => s + d.companies, 0) || 1;
+    const studentScale = regionMetrics.students / baseStudents;
+    const companyScale = regionMetrics.companies / baseCompanies;
+    return sectorDistribution.map((d) => ({
+      ...d,
+      students: Math.max(0, Math.round(d.students * studentScale)),
+      companies: Math.max(0, Math.round(d.companies * companyScale)),
+    }));
+  }, [regionMetrics]);
+
   const StatCard = ({ title, value, icon: Icon, trend, color = "primary" }) => (
     <Card className="bg-gradient-card border-border/20 hover:shadow-glow transition-all duration-300">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -80,6 +246,56 @@ const Dashboard = () => {
           Live Analytics
         </Badge>
       </div>
+
+      {/* Region Filters */}
+      <Card className="bg-gradient-card border-border/20">
+        <CardContent className="p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">State</label>
+              <Select value={selectedState} onValueChange={(v) => { setSelectedState(v); setSelectedCity(""); }} disabled={loadingStates || !!statesError}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingStates ? "Loading states..." : (statesError || "Select a state")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((state) => (
+                    <SelectItem key={state} value={state}>{state}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">City</label>
+              <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedState || loadingCities || !!citiesError}>
+                <SelectTrigger>
+                  <SelectValue placeholder={!selectedState ? "Select state first" : (loadingCities ? "Loading cities..." : (citiesError || "Select a city"))} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" className="w-full" onClick={() => { setSelectedState(""); setSelectedCity(""); }}>Clear Filters</Button>
+            </div>
+          </div>
+          {(statesError || citiesError) && (
+            <div className="mt-2 text-xs text-destructive">{statesError || citiesError}</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Region Summary */}
+      {regionMetrics && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard title={`Applications${selectedCity ? ` • ${selectedCity}` : ` • ${selectedState}`}`} value={regionMetrics.applications.toLocaleString()} icon={Users} color="chart-1" />
+          <StatCard title="Matches (Region)" value={regionMetrics.matches.toLocaleString()} icon={CheckCircle} color="success" />
+          <StatCard title="Companies (Region)" value={regionMetrics.companies} icon={Building2} color="chart-2" />
+          <StatCard title="Students (Region)" value={regionMetrics.students.toLocaleString()} icon={Users} color="primary" />
+        </div>
+      )}
 
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -126,7 +342,7 @@ const Dashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={applicationData}
+                    data={filteredApplicationData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -134,7 +350,7 @@ const Dashboard = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {applicationData.map((entry, index) => (
+                    {filteredApplicationData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -149,7 +365,7 @@ const Dashboard = () => {
               </ResponsiveContainer>
             </div>
             <div className="flex flex-col gap-2 mt-4">
-              {applicationData.map((item, index) => (
+              {filteredApplicationData.map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
@@ -171,7 +387,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={companyStatusData}>
+                <BarChart data={filteredCompanyStatusData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="name" 
@@ -207,7 +423,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrends}>
+                <LineChart data={filteredMonthlyTrends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="month" 
@@ -258,7 +474,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sectorDistribution.map((sector, index) => (
+              {filteredSectorDistribution.map((sector, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-foreground">{sector.sector}</span>

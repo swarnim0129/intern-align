@@ -2,6 +2,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
+
+type Student = {
+  id: number;
+  name: string;
+  email: string;
+  major: string;
+  year: string;
+  gpa: number;
+  location: string;
+  status: "matched" | "pending" | "rejected" | string;
+  company: string | null;
+  skills: string[];
+  eligibleRole: string;
+  casteCategory: "GEN" | "OBC" | "SC" | "ST" | "EWS";
+  pmScheme: {
+    isEligible: boolean;
+    internshipTrack: string; // e.g., Policy, Tech, Data, Administration
+    domicileState: string;
+    annualFamilyIncomeLakhs: number;
+    ewsCertificate: boolean;
+    categoryCertificate: boolean;
+    pwd: boolean;
+  };
+};
 import { 
   Users, 
   Search, 
@@ -15,6 +43,8 @@ import {
 } from "lucide-react";
 
 const Students = () => {
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const studentStats = {
     total: 12847,
     matched: 8932,
@@ -22,66 +52,121 @@ const Students = () => {
     rejected: 1810
   };
 
-  const recentStudents = [
+  const recentStudents: Student[] = [
     {
       id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.j@university.edu",
+      name: "Aarav Sharma",
+      email: "aarav.sharma@university.in",
       major: "Computer Science",
       year: "Senior",
-      gpa: 3.8,
-      location: "New York, NY",
+      gpa: 9.2,
+      location: "Bengaluru, KA",
       status: "matched",
-      company: "TechCorp Inc.",
-      skills: ["React", "Python", "Machine Learning"]
+      company: "TechMahindra",
+      skills: ["React", "Python", "Machine Learning"],
+      eligibleRole: "Frontend Engineering Intern",
+      casteCategory: "GEN",
+      pmScheme: {
+        isEligible: true,
+        internshipTrack: "Tech",
+        domicileState: "Karnataka",
+        annualFamilyIncomeLakhs: 7.2,
+        ewsCertificate: false,
+        categoryCertificate: false,
+        pwd: false,
+      },
     },
     {
       id: 2,
-      name: "Michael Chen",
-      email: "m.chen@university.edu",
+      name: "Isha Patel",
+      email: "isha.patel@university.in",
       major: "Business Analytics",
       year: "Junior",
-      gpa: 3.6,
-      location: "San Francisco, CA",
+      gpa: 8.6,
+      location: "Mumbai, MH",
       status: "pending",
       company: null,
-      skills: ["SQL", "Tableau", "Excel"]
+      skills: ["SQL", "Tableau", "Excel"],
+      eligibleRole: "Data Analyst Intern",
+      casteCategory: "EWS",
+      pmScheme: {
+        isEligible: true,
+        internshipTrack: "Data",
+        domicileState: "Maharashtra",
+        annualFamilyIncomeLakhs: 5.5,
+        ewsCertificate: true,
+        categoryCertificate: false,
+        pwd: false,
+      },
     },
     {
       id: 3,
-      name: "Emma Rodriguez",
-      email: "emma.r@university.edu",
+      name: "Vihaan Gupta",
+      email: "vihaan.gupta@university.in",
       major: "Mechanical Engineering",
       year: "Senior",
-      gpa: 3.9,
-      location: "Austin, TX",
+      gpa: 9.5,
+      location: "Pune, MH",
       status: "matched",
-      company: "Boeing",
-      skills: ["CAD", "MATLAB", "Project Management"]
+      company: "Tata Motors",
+      skills: ["CAD", "MATLAB", "Project Management"],
+      eligibleRole: "Operations Intern",
+      casteCategory: "OBC",
+      pmScheme: {
+        isEligible: true,
+        internshipTrack: "Administration",
+        domicileState: "Maharashtra",
+        annualFamilyIncomeLakhs: 8.1,
+        ewsCertificate: false,
+        categoryCertificate: true,
+        pwd: false,
+      },
     },
     {
       id: 4,
-      name: "Alex Thompson",
-      email: "alex.t@university.edu",
+      name: "Ananya Reddy",
+      email: "ananya.reddy@university.in",
       major: "Marketing",
       year: "Junior",
-      gpa: 3.4,
-      location: "Chicago, IL",
+      gpa: 8.2,
+      location: "Hyderabad, TS",
       status: "rejected",
       company: null,
-      skills: ["Digital Marketing", "Analytics", "Adobe Creative"]
+      skills: ["Digital Marketing", "Analytics", "Adobe Creative"],
+      eligibleRole: "Policy Communications Intern",
+      casteCategory: "SC",
+      pmScheme: {
+        isEligible: false,
+        internshipTrack: "Policy",
+        domicileState: "Telangana",
+        annualFamilyIncomeLakhs: 12.0,
+        ewsCertificate: false,
+        categoryCertificate: true,
+        pwd: false,
+      },
     },
     {
       id: 5,
-      name: "Lisa Wang",
-      email: "lisa.w@university.edu",
+      name: "Rohan Singh",
+      email: "rohan.singh@university.in",
       major: "Data Science",
       year: "Senior",
-      gpa: 3.7,
-      location: "Seattle, WA",
+      gpa: 8.9,
+      location: "Delhi, DL",
       status: "pending",
       company: null,
-      skills: ["Python", "R", "Deep Learning", "Statistics"]
+      skills: ["Python", "R", "Deep Learning", "Statistics"],
+      eligibleRole: "AI/ML Intern",
+      casteCategory: "ST",
+      pmScheme: {
+        isEligible: true,
+        internshipTrack: "Tech",
+        domicileState: "Delhi",
+        annualFamilyIncomeLakhs: 3.8,
+        ewsCertificate: false,
+        categoryCertificate: true,
+        pwd: true,
+      },
     }
   ];
 
@@ -229,7 +314,14 @@ const Students = () => {
                 
                 <div className="flex items-center gap-3 mt-3 md:mt-0">
                   {getStatusBadge(student.status)}
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setIsDetailsOpen(true);
+                    }}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -238,6 +330,98 @@ const Students = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          {selectedStudent && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src="/placeholder.svg?height=80&width=80" alt={selectedStudent.name} />
+                    <AvatarFallback>
+                      {selectedStudent.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <DialogTitle className="text-xl">{selectedStudent.name}</DialogTitle>
+                    <DialogDescription>
+                      {selectedStudent.major} • {selectedStudent.year}
+                    </DialogDescription>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{selectedStudent.eligibleRole}</Badge>
+                      <Badge className="bg-muted text-foreground" variant="outline">{selectedStudent.casteCategory}</Badge>
+                      {selectedStudent.pmScheme.isEligible ? (
+                        <Badge className="bg-success text-success-foreground">PM Scheme Eligible</Badge>
+                      ) : (
+                        <Badge variant="destructive">PM Scheme Ineligible</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <Separator className="my-4" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium mb-2 text-foreground">Profile</div>
+                    <dl className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                      <dt className="text-muted-foreground">Email</dt>
+                      <dd className="col-span-2 text-foreground truncate">{selectedStudent.email}</dd>
+                      <dt className="text-muted-foreground">Location</dt>
+                      <dd className="col-span-2 text-foreground">{selectedStudent.location}</dd>
+                      <dt className="text-muted-foreground">GPA</dt>
+                      <dd className="col-span-2 text-foreground">{selectedStudent.gpa}</dd>
+                      {selectedStudent.company && (
+                        <>
+                          <dt className="text-muted-foreground">Company</dt>
+                          <dd className="col-span-2 text-foreground">{selectedStudent.company}</dd>
+                        </>
+                      )}
+                    </dl>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium mb-2 text-foreground">Skills</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedStudent.skills.map((skill: string, index: number) => (
+                        <Badge key={index} variant="secondary" className="text-xs">{skill}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-foreground">PM Internship Scheme</div>
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <dt className="text-muted-foreground">Eligibility</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.isEligible ? "Eligible" : "Not eligible"}</dd>
+                    <dt className="text-muted-foreground">Track</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.internshipTrack}</dd>
+                    <dt className="text-muted-foreground">Domicile</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.domicileState}</dd>
+                    <dt className="text-muted-foreground">Family Income</dt>
+                    <dd className="text-foreground">₹{selectedStudent.pmScheme.annualFamilyIncomeLakhs} LPA</dd>
+                    <dt className="text-muted-foreground">EWS Certificate</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.ewsCertificate ? "Yes" : "No"}</dd>
+                    <dt className="text-muted-foreground">Category Certificate</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.categoryCertificate ? "Yes" : "No"}</dd>
+                    <dt className="text-muted-foreground">PwD</dt>
+                    <dd className="text-foreground">{selectedStudent.pmScheme.pwd ? "Yes" : "No"}</dd>
+                  </dl>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

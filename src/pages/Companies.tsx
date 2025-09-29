@@ -3,6 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Building2, 
   Search, 
@@ -16,7 +21,25 @@ import {
   Mail
 } from "lucide-react";
 
+type Company = {
+  id: number;
+  name: string;
+  industry: string;
+  location: string;
+  website: string;
+  email: string;
+  totalPositions: number;
+  filledPositions: number;
+  pendingApplications: number;
+  status: "active" | "allocated" | "pending" | string;
+  description: string;
+  requirements: string[];
+};
+
 const Companies = () => {
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const navigate = useNavigate();
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const companyStats = {
     total: 256,
     active: 156,
@@ -24,7 +47,7 @@ const Companies = () => {
     pending: 22
   };
 
-  const companies = [
+  const companies: Company[] = [
     {
       id: 1,
       name: "TechCorp Inc.",
@@ -272,11 +295,23 @@ const Companies = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedCompany(company);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
                       View Details
                     </Button>
-                    <Button size="sm" className="flex-1">
-                      Manage Positions
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => navigate(`/companies/${company.id}/students`)}
+                    >
+                      View Students
                     </Button>
                   </div>
                 </div>
@@ -285,6 +320,85 @@ const Companies = () => {
           </Card>
         ))}
       </div>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          {selectedCompany && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src="/placeholder.svg?height=80&width=80" alt={selectedCompany.name} />
+                    <AvatarFallback>
+                      {selectedCompany.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <DialogTitle className="text-xl">{selectedCompany.name}</DialogTitle>
+                    <DialogDescription>
+                      {selectedCompany.industry} • {selectedCompany.location}
+                    </DialogDescription>
+                    <div className="mt-2">
+                      {getStatusBadge(selectedCompany.status)}
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <Separator className="my-4" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium mb-2 text-foreground">About</div>
+                    <p className="text-sm text-muted-foreground">{selectedCompany.description}</p>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium mb-2 text-foreground">Contact</div>
+                    <dl className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                      <dt className="text-muted-foreground">Website</dt>
+                      <dd className="col-span-2 text-foreground truncate">{selectedCompany.website}</dd>
+                      <dt className="text-muted-foreground">Email</dt>
+                      <dd className="col-span-2 text-foreground truncate">{selectedCompany.email}</dd>
+                      <dt className="text-muted-foreground">Location</dt>
+                      <dd className="col-span-2 text-foreground">{selectedCompany.location}</dd>
+                    </dl>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium mb-2 text-foreground">Required Majors</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCompany.requirements.map((req, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">{req}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-foreground">Positions</div>
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <dt className="text-muted-foreground">Total Positions</dt>
+                    <dd className="text-foreground">{selectedCompany.totalPositions}</dd>
+                    <dt className="text-muted-foreground">Filled</dt>
+                    <dd className="text-foreground">{selectedCompany.filledPositions}</dd>
+                    <dt className="text-muted-foreground">Pending</dt>
+                    <dd className="text-foreground">{selectedCompany.pendingApplications}</dd>
+                    <dt className="text-muted-foreground">Fill Rate</dt>
+                    <dd className="text-foreground">{Math.round((selectedCompany.filledPositions / selectedCompany.totalPositions) * 100)}%</dd>
+                  </dl>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
