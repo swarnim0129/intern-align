@@ -20,7 +20,7 @@ const Landing = () => {
       <header className="h-16 border-b border-border bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-7xl h-full px-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Match Mitra" className="h-12  rounded" />
+            <img src="/logo.png" alt="Match Mitra" className="h-14 rounded" />
             <div className="leading-tight">
               <div className="font-semibold tracking-tight">Matchमित्र</div>
               <div className="text-[10px] text-muted-foreground -mt-0.5">AI-powered Internship Matching</div>
@@ -122,6 +122,30 @@ const Landing = () => {
                   alt="India Map"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
+                {/* Marker overlay (Google Maps-like pins) */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {[
+                    // Delhi vicinity (more left, more down)
+                    [45.0, 41.5], [44.2, 42.8], [45.6, 43.4],
+                    // Gujarat
+                    [24.0, 55.0], [25.8, 56.2], [23.2, 56.8], [26.6, 54.5],
+                    // Maharashtra
+                    [32.0, 68.0], [33.6, 66.6], [30.8, 66.2], [31.4, 69.6], [33.0, 68.8],
+                    // Karnataka
+                    [33.2, 76.5], [34.6, 78.0], [32.4, 78.8], [34.0, 75.4],
+                    // Tamil Nadu
+                    [38.2, 86.5], [39.8, 88.0], [38.8, 88.8], [37.6, 85.2],
+                    // Scatter across country
+                    [28.5, 47.0], [36.0, 52.0], [42.0, 54.0], [47.5, 48.0], [20.0, 60.0], [27.5, 72.0], [39.0, 70.0], [45.0, 78.0]
+                  ].map(([left, top], idx) => (
+                    <div key={idx} className="absolute -translate-x-1/2 -translate-y-full" style={{ left: `${left}%`, top: `${top - 12}%` }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] animate-[bounce_2.2s_infinite_ease-in-out]">
+                        <path d="M12 2C8.686 2 6 4.686 6 8c0 4.5 6 12 6 12s6-7.5 6-12c0-3.314-2.686-6-6-6z" fill="#ef4444"/>
+                        <circle cx="12" cy="8" r="3" fill="white"/>
+                      </svg>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
