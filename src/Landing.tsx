@@ -23,7 +23,7 @@ const Landing = () => {
             <img src="/logo.png" alt="Match Mitra" className="h-14 rounded" />
             <div className="leading-tight">
               <div className="font-semibold tracking-tight">Matchमित्र</div>
-              <div className="text-[10px] text-muted-foreground -mt-0.5">AI-powered Internship Matching</div>
+              {/* <div className="text-[10px] text-muted-foreground -mt-0.5">AI-powered Internship Matching</div> */}
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
